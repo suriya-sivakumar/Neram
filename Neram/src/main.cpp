@@ -6,6 +6,7 @@
 #include "hal/board_config.h"
 #include "hal/power_manager.h"
 #include "system/clock_logic.h"
+#include "system/ble_manager.h"
 #include "ui/display.h"
 #include "apps/clock.h"
 
@@ -19,6 +20,7 @@ void setup()
   // Initialize display
   DisplayDriver::initDisplay();
 
+  BLEManager::init();
   // Initialize clock logic
   ClockLogic::initClock();
 
@@ -30,4 +32,5 @@ void setup()
 void loop()
 {
   vTaskDelay(pdMS_TO_TICKS(1000));
+  BLEManager::parseUartTime();
 }
