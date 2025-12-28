@@ -7,6 +7,7 @@
 #include "hal/power_manager.h"
 #include "system/clock_logic.h"
 #include "ui/display.h"
+#include "apps/clock.h"
 
 void setup()
 {
@@ -22,15 +23,11 @@ void setup()
   ClockLogic::initClock();
 
   Serial.println("Setup complete.");
+
+  Clock::run();
 }
 
 void loop()
 {
-
-  while (1)
-  {
-    Display::drawClock();
-    Serial.println("Clock updated on display.");
-    delay(500);
-  }
+  vTaskDelay(pdMS_TO_TICKS(1000));
 }
