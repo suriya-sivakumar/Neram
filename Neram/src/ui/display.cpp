@@ -20,4 +20,37 @@ namespace Display
         display.refresh();
         delay(500); // Update every 500 ms
     }
+
+    void drawTimer(void)
+    {
+        display.clearDisplay();
+        display.setTextColor(0); // BLACK
+        display.setTextSize(2);
+        display.setCursor(20, 50);
+        display.print("Timer: ");
+        // display.print(ClockLogic::getTimerValue());
+        display.refresh();
+    }
+
+    void drawStopwatch(void)
+    {
+        display.clearDisplay();
+        display.setTextColor(0); // BLACK
+        display.setTextSize(2);
+        display.setCursor(20, 50);
+        display.print("Stopwatch: ");
+        // display.print(ClockLogic::getStopwatchValue());
+        display.refresh();
+    }
+
+    void notifyButtonPress(void)
+    {
+        display.clearDisplay();
+        display.setTextColor(0); // BLACK
+        display.setTextSize(2);
+        display.setCursor(20, 50);
+        display.print("Button Pressed!");
+
+        display.refresh();
+    }
 }

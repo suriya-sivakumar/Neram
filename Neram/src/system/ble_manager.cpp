@@ -3,6 +3,8 @@
 
 BLEUart bleuart; // Create the UART service object
 
+// TODO: Make this not UART
+
 namespace BLEManager
 {
 

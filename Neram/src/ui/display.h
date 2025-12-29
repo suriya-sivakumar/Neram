@@ -10,5 +10,8 @@
 namespace Display
 {
     void drawClock(void);
+    void notifyButtonPress(void);
+    void drawTimer(void);
+    void drawStopwatch(void);
 }
 #endif // DISPLAY_H

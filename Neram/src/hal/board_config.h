@@ -18,4 +18,11 @@
 #define SHARP_MOSI PIN_111
 #define SHARP_SS PIN_009
 
+// Button pinmap
+
+#define BUTTON_A PIN_024
+#define BUTTON_B PIN_022
+#define BUTTON_C PIN_020
+#define BUTTON_D PIN_017
+
 #endif
