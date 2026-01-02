@@ -10,10 +10,17 @@
 namespace ClockLogic
 {
     extern volatile struct tm t;
+    extern volatile struct stopwatch_t stopwatch;
 
     void timerCallback(TimerHandle_t xTimer);
 
     void initClock();
+
+    uint8_t getStopwatchMinutes();
+    uint8_t getStopwatchSeconds();
+
+    void resetStopwatch();
+    void toggleStopwatch();
 
 }
 

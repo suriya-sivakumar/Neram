@@ -9,9 +9,8 @@
 
 namespace Display
 {
-    void drawClock(void);
-    void notifyButtonPress(void);
-    void drawTimer(void);
-    void drawStopwatch(void);
+    void drawClock(int x, int y);
+    void drawTimer(int x, int y);
+    void drawStopwatch(int x, int y, uint8_t minutes, uint8_t seconds);
 }
 #endif // DISPLAY_H

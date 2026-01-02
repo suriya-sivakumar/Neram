@@ -22,6 +22,11 @@ namespace UI_Manager
     void run();
 
     void UITask(void *pvParameters);
+
+    void drawViewAt(WATCH_STATE state, int x);
+
+    void performTransition(WATCH_STATE from, WATCH_STATE to, int offset);
+
 }
 
 #endif // SRC_APPS_UI_MANAGER_H_

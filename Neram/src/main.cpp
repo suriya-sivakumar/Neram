@@ -8,19 +8,21 @@
 #include "globals.h"
 #include "hal/board_config.h"
 #include "hal/power_manager.h"
+#include "hal/input_manager.h"
 #include "system/clock_logic.h"
 #include "system/ble_manager.h"
 #include "ui/display.h"
 #include "apps/UI_Manager.h"
 
-volatile uint32_t last_interrupt_time = 0;
+extern void InputManager::buttonISR();
 
 SemaphoreHandle_t xDisplayMutex = NULL;
 QueueHandle_t xButtonQueue = NULL;
+QueueHandle_t xUICommandQueue = NULL;
 
 void buttonTask(void *pvParameters);
 
-void buttonISR();
+void attachButtonISR();
 
 void setup()
 {
@@ -43,77 +45,72 @@ void setup()
   // Initialize clock logic
   ClockLogic::initClock();
 
+  InputManager::init();
+
   xButtonQueue = xQueueCreate(10, sizeof(uint8_t));
+  xUICommandQueue = xQueueCreate(5, sizeof(uint8_t));
 
-  pinMode(BUTTON_A, INPUT_PULLUP);
-  pinMode(BUTTON_B, INPUT_PULLUP);
-  pinMode(BUTTON_C, INPUT_PULLUP);
-  pinMode(BUTTON_D, INPUT_PULLUP);
-
-  attachInterrupt(digitalPinToInterrupt(BUTTON_A), buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_B), buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_C), buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_D), buttonISR, FALLING);
+  attachButtonISR();
 
   Serial.println("Setup complete.");
   UI_Manager::setState(UI_Manager::CLOCK);
   UI_Manager::run();
-  xTaskCreate(buttonTask, "ButtonTask", 2048, NULL, 1, NULL);
+
+  xTaskCreate(buttonTask, "ButtonTask", 2048, NULL, 2, NULL);
 }
 
 void buttonTask(void *pvParameters)
 {
   uint8_t receivedBtnID;
-
   for (;;)
   {
     if (xQueueReceive(xButtonQueue, &receivedBtnID, portMAX_DELAY) == pdPASS)
     {
-      Serial.print("Received Button: ");
-      Serial.println(receivedBtnID);
+      uint8_t cmd = 0;
 
-      if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
+      // Logic: Decide what the button does based on current screen
+      if (receivedBtnID == BTN_ID_A)
       {
-        if (receivedBtnID == BTN_ID_A)
+        cmd = UI_CMD_NEXT;
+      }
+      else if (receivedBtnID == BTN_ID_B)
+      {
+        cmd = UI_CMD_PREV;
+      }
+      else if (receivedBtnID == BTN_ID_C)
+      {
+        // Only send stopwatch command if we are actually ON the stopwatch screen
+        if (UI_Manager::getState() == UI_Manager::STOPWATCH)
         {
-          UI_Manager::incrementState();
+          cmd = UI_CMD_STOPWATCH_TOGGLE;
         }
-        else if (receivedBtnID == BTN_ID_B)
+      }
+      else if (receivedBtnID == BTN_ID_D)
+      {
+        if (UI_Manager::getState() == UI_Manager::STOPWATCH)
         {
-          UI_Manager::decrementState();
+          cmd = UI_CMD_STOPWATCH_RESET;
         }
-        xSemaphoreGive(xDisplayMutex);
       }
 
-      vTaskDelay(pdMS_TO_TICKS(50));
+      // Send to UI Task if a valid command was generated
+      if (cmd != 0)
+      {
+        xQueueSend(xUICommandQueue, &cmd, 0);
+      }
+
+      // Debounce delay
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
 }
-void buttonISR()
+
+void attachButtonISR()
 {
-  uint32_t interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 200) // Debounce time
-  {
-    last_interrupt_time = interrupt_time;
-    uint8_t pinClicked = 0;
-
-    if (digitalRead(BUTTON_A) == LOW)
-      pinClicked = BTN_ID_A;
-    else if (digitalRead(BUTTON_B) == LOW)
-      pinClicked = BTN_ID_B;
-    else if (digitalRead(BUTTON_C) == LOW)
-      pinClicked = BTN_ID_C;
-    else if (digitalRead(BUTTON_D) == LOW)
-      pinClicked = BTN_ID_D;
-
-    if (pinClicked != 0)
-    {
-
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      xQueueSendFromISR(xButtonQueue, &pinClicked, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-  }
+  attachInterrupt(digitalPinToInterrupt(BUTTON_A), InputManager::buttonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_B), InputManager::buttonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_C), InputManager::buttonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_D), InputManager::buttonISR, FALLING);
 }
 
 void loop()

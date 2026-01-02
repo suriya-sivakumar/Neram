@@ -8,12 +8,31 @@ namespace ClockLogic
 {
 
     volatile struct tm t;
+    struct stopwatch_t
+    {
+        int minutes;
+        int seconds;
+        bool running;
+    };
+    volatile stopwatch_t stopwatch = {0, 0, false};
+
     void timerCallback(TimerHandle_t xTimer)
     {
         (void)xTimer;
         // update the global time struct 't' once per second
 
         t.tm_sec++;
+
+        if (stopwatch.running)
+        {
+            stopwatch.seconds++;
+            if (stopwatch.seconds >= 60)
+            {
+                stopwatch.seconds = 0;
+                stopwatch.minutes++;
+            }
+        }
+
         if (t.tm_sec >= 60)
         {
             t.tm_sec = 0;
@@ -54,4 +73,37 @@ namespace ClockLogic
 
         timer.start();
     }
+
+    uint8_t getStopwatchMinutes()
+    {
+        return stopwatch.minutes;
+    }
+
+    uint8_t getStopwatchSeconds()
+    {
+        return stopwatch.seconds;
+    }
+
+    void resetStopwatch()
+    {
+        if (!stopwatch.running)
+        {
+            stopwatch.minutes = 0;
+            stopwatch.seconds = 0;
+            stopwatch.running = false;
+        }
+    }
+
+    void toggleStopwatch()
+    {
+        if (!stopwatch.running)
+        {
+            stopwatch.running = true;
+        }
+        else
+        {
+            stopwatch.running = false;
+        }
+    }
+
 }

@@ -5,79 +5,114 @@
 #include "apps/ui_manager.h"
 #include "ui/display.h"
 #include "globals.h"
+#include "system/clock_logic.h"
 
 namespace UI_Manager
 {
-    WATCH_STATE currentState;
+    WATCH_STATE currentState = WATCH_STATE::CLOCK;
 
-    void setState(WATCH_STATE state)
-    {
-        currentState = state;
-    }
-
-    WATCH_STATE getState()
-    {
-        return currentState;
-    }
+    void setState(WATCH_STATE state) { currentState = state; }
+    WATCH_STATE getState() { return currentState; }
 
     void incrementState()
     {
-        if (currentState < WATCH_STATE::COUNT)
+        int next = static_cast<int>(currentState) + 1;
+        if (next >= static_cast<int>(WATCH_STATE::COUNT))
         {
-            currentState = static_cast<WATCH_STATE>(static_cast<int>(currentState) + 1);
+            currentState = WATCH_STATE::CLOCK;
+        }
+        else
+        {
+            currentState = static_cast<WATCH_STATE>(next);
         }
     }
 
     void decrementState()
     {
-        if (currentState > WATCH_STATE::CLOCK)
+        int next = static_cast<int>(currentState) - 1;
+        if (next < 0)
         {
-            currentState = static_cast<WATCH_STATE>(static_cast<int>(currentState) - 1);
+            currentState = static_cast<WATCH_STATE>(static_cast<int>(WATCH_STATE::COUNT) - 1);
+        }
+        else
+        {
+            currentState = static_cast<WATCH_STATE>(next);
+        }
+    }
+
+    void drawViewAt(WATCH_STATE state, int x)
+    {
+        switch (state)
+        {
+        case WATCH_STATE::CLOCK:
+        {
+            Display::drawClock(x, 50);
+            break;
+        }
+        case WATCH_STATE::TIMER:
+        {
+            Display::drawTimer(x, 50);
+            break;
+        }
+        case WATCH_STATE::STOPWATCH:
+        {
+            Display::drawStopwatch(x, 50,
+                                   ClockLogic::getStopwatchMinutes(),
+                                   ClockLogic::getStopwatchSeconds());
+            break;
+        }
+        default:
+        {
+            break;
+        }
         }
     }
 
     void UITask(void *pvParameters)
     {
-
         (void)pvParameters;
+        uint8_t cmd;
+
         for (;;)
         {
-
-            switch (getState())
+            // 1. Wait for a command for up to 100ms
+            // This blocks the task, saving battery, but wakes up instantly on button press
+            if (xQueueReceive(xUICommandQueue, &cmd, pdMS_TO_TICKS(100)) == pdPASS)
             {
-            case CLOCK:
-                if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
+                // Process input commands immediately
+                if (cmd == UI_CMD_NEXT)
                 {
-                    Display::drawClock();
-                    Serial.println("ClockTask: Tick");
+                    incrementState();
                 }
-                break;
-
-            case TIMER:
-                if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
+                else if (cmd == UI_CMD_PREV)
                 {
-                    Display::drawTimer();
-                    Serial.println("TimerTask: Tick");
+                    decrementState();
                 }
-                break;
-
-            case STOPWATCH:
-                if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
+                else if (cmd == UI_CMD_STOPWATCH_TOGGLE)
                 {
-                    Display::drawStopwatch();
-                    Serial.println("StopwatchTask: Tick");
+                    ClockLogic::toggleStopwatch();
                 }
-                break;
-
-            // Just so the compiler doesn't complain, it should never reach here
-            case COUNT:
-                break;
+                else if (cmd == UI_CMD_STOPWATCH_RESET)
+                {
+                    ClockLogic::resetStopwatch();
+                }
             }
 
-            xSemaphoreGive(xDisplayMutex);
-            vTaskDelay(pdMS_TO_TICKS(500));
+            // 2. Render the current state
+            // This runs after a command OR every 100ms (for clock/stopwatch updates)
+            if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
+            {
+                display.clearDisplay();
+
+                // Centering slightly better: 144 width, text starts around 20
+                drawViewAt(currentState, 20);
+
+                display.refresh();
+                xSemaphoreGive(xDisplayMutex);
+            }
         }
     }
+
     void run()
     {
         Serial.println("UI Manager Starting...");
