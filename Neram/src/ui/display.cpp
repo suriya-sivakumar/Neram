@@ -18,7 +18,6 @@ namespace Display
         display.print(timeStr);
 
         display.refresh();
-        delay(500); // Update every 500 ms
     }
 
     void drawTimer(int x, int y)
