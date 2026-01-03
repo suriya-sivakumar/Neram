@@ -133,6 +133,9 @@ void ancs_notification_callback(AncsNotification_t *notif)
 void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 {
     Serial.printf("Disconnected, reason = 0x%02X\n", reason);
+    bleClientDis.begin();
+    bleancs.begin();
+    bleCTime.begin();
 }
 
 void cts_adjust_callback(uint8_t reason)

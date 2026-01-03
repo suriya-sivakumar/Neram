@@ -14,7 +14,7 @@ namespace ClockLogic
     extern volatile struct tm t;
     extern volatile struct stopwatch_t stopwatch;
 
-    void timerCallback(TimerHandle_t xTimer);
+    void clockTask(void *pvParameters);
 
     void initClock();
 

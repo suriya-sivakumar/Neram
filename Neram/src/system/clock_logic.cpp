@@ -21,40 +21,51 @@ namespace ClockLogic
     };
     volatile stopwatch_t stopwatch = {0, 0, false};
 
-    void timerCallback(TimerHandle_t xTimer)
+    void clockTask(void *pvParameters)
     {
-        (void)xTimer;
+        (void)pvParameters;
         // update the global time struct 't' once per second
-
-        if (stopwatch.running)
+        while (1)
         {
-            stopwatch.seconds++;
-            if (stopwatch.seconds >= 60)
+            if (stopwatch.running)
             {
-                stopwatch.seconds = 0;
-                stopwatch.minutes++;
+                stopwatch.seconds++;
+                if (stopwatch.seconds >= 60)
+                {
+                    stopwatch.seconds = 0;
+                    stopwatch.minutes++;
+                }
             }
+
+            t.tm_sec++;
+            if (t.tm_sec >= 60)
+            {
+                t.tm_sec = 0;
+                t.tm_min++;
+                if (t.tm_min >= 60)
+                {
+                    t.tm_min = 0;
+                    t.tm_hour++;
+                    if (t.tm_hour >= 24)
+                    {
+                        t.tm_hour = 0;
+                        t.tm_mday++;
+                        if (t.tm_mday > 31)
+                        {
+                            t.tm_mday = 1;
+                            t.tm_mon++;
+                            if (t.tm_mon > 11)
+                            {
+                                t.tm_mon = 0;
+                                t.tm_year++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
-
-        struct tm local_t;
-        local_t.tm_sec = t.tm_sec;
-        local_t.tm_min = t.tm_min;
-        local_t.tm_hour = t.tm_hour;
-        local_t.tm_mday = t.tm_mday;
-        local_t.tm_mon = t.tm_mon;
-        local_t.tm_year = t.tm_year;
-
-        time_t now = mktime(&local_t);
-        now++;
-        struct tm *next = localtime(&now);
-
-        t.tm_sec = next->tm_sec;
-        t.tm_min = next->tm_min;
-        t.tm_hour = next->tm_hour;
-        t.tm_mday = next->tm_mday;
-        t.tm_mon = next->tm_mon;
-        t.tm_year = next->tm_year;
-        t.tm_wday = next->tm_wday;
     }
 
     void initClock()
@@ -66,9 +77,7 @@ namespace ClockLogic
         t.tm_min = 42;
         t.tm_sec = 0;
 
-        timer.begin(1000, timerCallback, NULL, true);
-
-        timer.start();
+        xTaskCreate(clockTask, "ClockTask", 4096, NULL, 4, NULL);
     }
 
     uint8_t getStopwatchMinutes()

@@ -112,6 +112,6 @@ namespace UIManager
     void run()
     {
         Serial.println("UI Manager Starting...");
-        xTaskCreate(UITask, "UITask", 2048, NULL, 1, NULL);
+        xTaskCreate(UITask, "UITask", 4096, NULL, 1, NULL);
     }
 }

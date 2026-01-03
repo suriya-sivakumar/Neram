@@ -28,7 +28,7 @@ void attachButtonISR();
 void setup()
 {
   Serial.begin(9600);
-
+  PowerManager::initWatchdog();
   xDisplayMutex = xSemaphoreCreateMutex();
   if (xDisplayMutex == NULL)
   {
@@ -61,5 +61,8 @@ void setup()
 
 void loop()
 {
+  PowerManager::feedWatchdog();
+  Serial.print("Up: ");
+  Serial.println(millis() / 1000); // Print uptime in seconds
   vTaskDelay(pdMS_TO_TICKS(1000));
 }
