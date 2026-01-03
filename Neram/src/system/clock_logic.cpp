@@ -1,6 +1,11 @@
 #include <Arduino.h>
+#include <time.h>
+#include <bluefruit.h>
+#include "globals.h"
 #include "clock_logic.h"
 #include "hal/board_config.h"
+#include "hal/input_manager.h"
+#include "system/ble_manager.h"
 
 SoftwareTimer timer;
 
@@ -104,6 +109,26 @@ namespace ClockLogic
         {
             stopwatch.running = false;
         }
+    }
+
+    void syncWithBLE(BLEClientCts &bleCTime)
+    {
+        Serial.println("Syncing clock with Phone via BLE...");
+
+        // Pause the timer or use a mutex if you have many tasks
+        // to prevent reading 't' while it's being updated.
+
+        t.tm_sec = bleCTime.Time.second;
+        t.tm_min = bleCTime.Time.minute;
+        t.tm_hour = bleCTime.Time.hour;
+        t.tm_mday = bleCTime.Time.day;
+        t.tm_mon = bleCTime.Time.month - 1;    // tm_mon is 0-11
+        t.tm_year = bleCTime.Time.year - 1900; // tm_year is years since 1900
+
+        // Use mktime to "normalize" the struct (calculates day of week/year)
+        mktime((struct tm *)&t);
+
+        Serial.println("Clock synced with Phone via BLE!");
     }
 
 }

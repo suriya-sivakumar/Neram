@@ -4,7 +4,7 @@
 #include <time.h>
 #include <Arduino.h>
 
-namespace UI_Manager
+namespace UIManager
 {
     extern enum WATCH_STATE {
         CLOCK,

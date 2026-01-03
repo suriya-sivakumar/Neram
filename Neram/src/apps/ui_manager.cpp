@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "system/clock_logic.h"
 
-namespace UI_Manager
+namespace UIManager
 {
     WATCH_STATE currentState = WATCH_STATE::CLOCK;
 
@@ -75,8 +75,7 @@ namespace UI_Manager
 
         for (;;)
         {
-            // 1. Wait for a command for up to 100ms
-            // This blocks the task, saving battery, but wakes up instantly on button press
+
             if (xQueueReceive(xUICommandQueue, &cmd, pdMS_TO_TICKS(100)) == pdPASS)
             {
                 // Process input commands immediately
@@ -98,13 +97,10 @@ namespace UI_Manager
                 }
             }
 
-            // 2. Render the current state
-            // This runs after a command OR every 100ms (for clock/stopwatch updates)
             if (xSemaphoreTake(xDisplayMutex, portMAX_DELAY) == pdTRUE)
             {
                 display.clearDisplay();
 
-                // Centering slightly better: 144 width, text starts around 20
                 drawViewAt(currentState, 20);
 
                 display.refresh();

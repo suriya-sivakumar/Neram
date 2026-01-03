@@ -15,14 +15,11 @@ namespace InputManager
 
     extern void buttonISR()
     {
-        // 1. Get current time in milliseconds
         uint32_t currentTime = millis();
 
-        // 2. Define a lockout period (200ms is standard for mechanical buttons)
         static uint32_t lastInterruptTime = 0;
         const uint32_t debounceThreshold = 200;
 
-        // 3. Only process if enough time has passed since the LAST successful press
         if (currentTime - lastInterruptTime > debounceThreshold)
         {
             uint8_t currentButtonState = 0;
@@ -39,7 +36,6 @@ namespace InputManager
 
             if (currentButtonState != 0)
             {
-                // Update the last interrupt time ONLY on a valid press
                 lastInterruptTime = currentTime;
 
                 BaseType_t xHigherPriorityTaskWoken = pdFALSE;

@@ -4,8 +4,8 @@
 namespace BLEManager
 {
     void init();
-    void update();
-    void parseUartTime();
+    void startAdv();
+    void sendMediaControl(uint16_t usage);
 }
 
 #endif // BLE_MANAGER_H

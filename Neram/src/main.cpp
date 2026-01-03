@@ -11,6 +11,7 @@
 #include "hal/input_manager.h"
 #include "system/clock_logic.h"
 #include "system/ble_manager.h"
+#include "system/button_manager.h"
 #include "ui/display.h"
 #include "apps/UI_Manager.h"
 
@@ -42,6 +43,7 @@ void setup()
   DisplayDriver::initDisplay();
 
   BLEManager::init();
+
   // Initialize clock logic
   ClockLogic::initClock();
 
@@ -50,71 +52,14 @@ void setup()
   xButtonQueue = xQueueCreate(10, sizeof(uint8_t));
   xUICommandQueue = xQueueCreate(5, sizeof(uint8_t));
 
-  attachButtonISR();
-
   Serial.println("Setup complete.");
-  UI_Manager::setState(UI_Manager::CLOCK);
-  UI_Manager::run();
+  UIManager::setState(UIManager::CLOCK);
+  UIManager::run();
 
-  xTaskCreate(buttonTask, "ButtonTask", 2048, NULL, 2, NULL);
-}
-
-void buttonTask(void *pvParameters)
-{
-  uint8_t receivedBtnID;
-  for (;;)
-  {
-    if (xQueueReceive(xButtonQueue, &receivedBtnID, portMAX_DELAY) == pdPASS)
-    {
-      uint8_t cmd = 0;
-
-      // Logic: Decide what the button does based on current screen
-      if (receivedBtnID == BTN_ID_A)
-      {
-        cmd = UI_CMD_NEXT;
-      }
-      else if (receivedBtnID == BTN_ID_B)
-      {
-        cmd = UI_CMD_PREV;
-      }
-      else if (receivedBtnID == BTN_ID_C)
-      {
-        // Only send stopwatch command if we are actually ON the stopwatch screen
-        if (UI_Manager::getState() == UI_Manager::STOPWATCH)
-        {
-          cmd = UI_CMD_STOPWATCH_TOGGLE;
-        }
-      }
-      else if (receivedBtnID == BTN_ID_D)
-      {
-        if (UI_Manager::getState() == UI_Manager::STOPWATCH)
-        {
-          cmd = UI_CMD_STOPWATCH_RESET;
-        }
-      }
-
-      // Send to UI Task if a valid command was generated
-      if (cmd != 0)
-      {
-        xQueueSend(xUICommandQueue, &cmd, 0);
-      }
-
-      // Debounce delay
-      vTaskDelay(pdMS_TO_TICKS(100));
-    }
-  }
-}
-
-void attachButtonISR()
-{
-  attachInterrupt(digitalPinToInterrupt(BUTTON_A), InputManager::buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_B), InputManager::buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_C), InputManager::buttonISR, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_D), InputManager::buttonISR, FALLING);
+  ButtonManager::run();
 }
 
 void loop()
 {
   vTaskDelay(pdMS_TO_TICKS(1000));
-  BLEManager::parseUartTime();
 }

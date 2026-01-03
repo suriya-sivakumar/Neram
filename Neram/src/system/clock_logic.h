@@ -3,10 +3,12 @@
 
 #include <Arduino.h>
 #include <time.h>
+#include <bluefruit.h>
 #include "hal/board_config.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SharpMem.h>
 
+class BLEClientCts;
 namespace ClockLogic
 {
     extern volatile struct tm t;
@@ -21,6 +23,8 @@ namespace ClockLogic
 
     void resetStopwatch();
     void toggleStopwatch();
+
+    void syncWithBLE(BLEClientCts &bleCTime);
 
 }
 
