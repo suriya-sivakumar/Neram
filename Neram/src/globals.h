@@ -1,8 +1,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
-
-#pragma once
-#include <FreeRTOS.h>
+// #include <FreeRTOS.h>
 #include <semphr.h>
 #include <queue.h>
 

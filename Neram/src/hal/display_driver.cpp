@@ -16,10 +16,9 @@ namespace DisplayDriver
         pinMode(SHARP_SS, OUTPUT);
 
         // Set high drive mode for debugging as jumper cables decrease the pin voltage
-        // Comment out if deployed onto PCB
-        NRF_P1->PIN_CNF[13] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
-        NRF_P1->PIN_CNF[11] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
-        NRF_P0->PIN_CNF[9] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
+        // NRF_P1->PIN_CNF[13] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
+        // NRF_P1->PIN_CNF[11] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
+        // NRF_P0->PIN_CNF[9] |= (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos);
 
         display.begin();
         display.clearDisplay();
