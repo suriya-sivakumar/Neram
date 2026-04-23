@@ -2,7 +2,9 @@
 #define BOARD_CONFIG_H
 #include "Arduino.h"
 
-// This project uses a nice!nano clone board which uses a nRF52840
+// GPIO definitions for the watch, for both the nice!nano and the XIAO NRF52840 Sense.
+
+/*!SECTION XIAO NRF52840 Sense */
 
 // // VCC enable pin (to power the VCC rail)
 #define VCC_ENABLE 1
@@ -22,6 +24,13 @@
 #define BUTTON_B D1
 #define BUTTON_C D2
 #define BUTTON_D D3
+
+// Battery sense (XIAO NRF52840 Sense: P0.31 via 1M:510k divider gated by P0.14)
+#define PIN_VBAT_SENSE  32  // P0.31 analog input
+#define PIN_VBAT_ENABLE 14  // P0.14 - drive LOW to enable divider
+#define VBAT_DIVIDER    (1510.0f / 510.0f)  // (R1+R2)/R2
+#define VBAT_MV_EMPTY   3300
+#define VBAT_MV_FULL    4200
 
 /*!SECTION NICE!NANO */
 

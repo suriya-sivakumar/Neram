@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "ble_manager.h"
 #include "system/clock_logic.h"
+#include "system/logger.h"
 
 void connect_callback(uint16_t conn_handle);
 void disconnect_callback(uint16_t conn_handle, uint8_t reason);
@@ -70,6 +71,11 @@ namespace BLEManager
             blehid.consumerKeyRelease();
         }
     }
+
+    bool isConnected()
+    {
+        return Bluefruit.connected() > 0;
+    }
 }
 
 /* --- Callback Definitions --- */
@@ -77,22 +83,22 @@ namespace BLEManager
 void connect_callback(uint16_t conn_handle)
 {
     BLEConnection *conn = Bluefruit.Connection(conn_handle);
-    Serial.println("Connected");
+    LOG_I("BLE", "Connected");
 
     if (bleClientDis.discover(conn_handle))
     {
-        Serial.println("DIS Discovered");
+        LOG_D("BLE", "DIS discovered");
     }
 
     if (bleancs.discover(conn_handle))
     {
-        Serial.println("ANCS Discovered, Requesting Pair...");
+        LOG_I("BLE", "ANCS discovered, requesting pair");
         conn->requestPairing();
     }
 
     if (bleCTime.discover(conn_handle))
     {
-        Serial.println("CTS Discovered");
+        LOG_I("BLE", "CTS discovered");
     }
 }
 
@@ -105,7 +111,7 @@ void connection_secured_callback(uint16_t conn_handle)
     }
     else
     {
-        Serial.println("Secured");
+        LOG_I("BLE", "Link secured");
         if (bleancs.discovered())
         {
             bleancs.enableNotification();
@@ -123,16 +129,20 @@ void connection_secured_callback(uint16_t conn_handle)
 
 void ancs_notification_callback(AncsNotification_t *notif)
 {
-    char title[64] = {0};
+    char title[60] = {0};
     if (bleancs.getTitle(notif->uid, title, sizeof(title)))
     {
-        Serial.printf("Notification: %s\n", title);
+        char buf[60];
+        snprintf(buf, sizeof(buf), "notif: %.55s", title);
+        LOG_I("BLE", buf);
     }
 }
 
 void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 {
-    Serial.printf("Disconnected, reason = 0x%02X\n", reason);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "Disconnected reason=0x%02X", reason);
+    LOG_W("BLE", buf);
     bleClientDis.begin();
     bleancs.begin();
     bleCTime.begin();
@@ -140,8 +150,8 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 
 void cts_adjust_callback(uint8_t reason)
 {
-    const char *reason_str[] = {"Manual", "External Reference", "Change of Time Zone", "Change of DST"};
-
-    Serial.println("iOS Device time changed due to ");
-    Serial.println(reason_str[reason]);
+    const char *reason_str[] = {"Manual", "Ext Ref", "TZ change", "DST change"};
+    char buf[40];
+    snprintf(buf, sizeof(buf), "CTS adjust: %s", reason_str[reason & 3]);
+    LOG_I("BLE", buf);
 }

@@ -1,11 +1,13 @@
 #include <Arduino.h>
 #include <time.h>
+#include <stdio.h>
 #include <bluefruit.h>
 #include "globals.h"
 #include "clock_logic.h"
 #include "hal/board_config.h"
 #include "hal/input_manager.h"
 #include "system/ble_manager.h"
+#include "system/logger.h"
 
 SoftwareTimer timer;
 
@@ -97,6 +99,7 @@ namespace ClockLogic
             stopwatch.minutes = 0;
             stopwatch.seconds = 0;
             stopwatch.running = false;
+            LOG_I("CLK", "Stopwatch reset");
         }
     }
 
@@ -105,31 +108,35 @@ namespace ClockLogic
         if (!stopwatch.running)
         {
             stopwatch.running = true;
+            LOG_I("CLK", "Stopwatch started");
         }
         else
         {
             stopwatch.running = false;
+            char buf[40];
+            snprintf(buf, sizeof(buf), "Stopwatch stopped %02d:%02d",
+                     stopwatch.minutes, stopwatch.seconds);
+            LOG_I("CLK", buf);
         }
     }
 
     void syncWithBLE(BLEClientCts &bleCTime)
     {
-        Serial.println("Syncing clock with Phone via BLE...");
-
-        // Pause the timer or use a mutex if you have many tasks
-        // to prevent reading 't' while it's being updated.
+        LOG_I("CLK", "Syncing time via BLE CTS...");
 
         t.tm_sec = bleCTime.Time.second;
         t.tm_min = bleCTime.Time.minute;
         t.tm_hour = bleCTime.Time.hour;
         t.tm_mday = bleCTime.Time.day;
-        t.tm_mon = bleCTime.Time.month - 1;    // tm_mon is 0-11
-        t.tm_year = bleCTime.Time.year - 1900; // tm_year is years since 1900
+        t.tm_mon = bleCTime.Time.month - 1;
+        t.tm_year = bleCTime.Time.year - 1900;
 
-        // Use mktime to "normalize" the struct (calculates day of week/year)
         mktime((struct tm *)&t);
 
-        Serial.println("Clock synced with Phone via BLE!");
+        char buf[40];
+        snprintf(buf, sizeof(buf), "Time synced %02d:%02d:%02d",
+                 t.tm_hour, t.tm_min, t.tm_sec);
+        LOG_I("CLK", buf);
     }
 
 }

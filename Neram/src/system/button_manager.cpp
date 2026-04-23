@@ -1,15 +1,27 @@
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <stdio.h>
 
 #include "globals.h"
 #include "hal/board_config.h"
 
 #include "apps/UI_Manager.h"
 #include "system/ble_manager.h"
+#include "system/logger.h"
 #include "hal/input_manager.h"
 
 namespace ButtonManager
 {
+
+    static const char *btnName(uint8_t id) {
+        switch (id) {
+            case BTN_ID_A: return "A";
+            case BTN_ID_B: return "B";
+            case BTN_ID_C: return "C";
+            case BTN_ID_D: return "D";
+            default:       return "?";
+        }
+    }
 
     void buttonTask(void *pvParameters)
     {
@@ -18,6 +30,10 @@ namespace ButtonManager
         {
             if (xQueueReceive(xButtonQueue, &receivedBtnID, portMAX_DELAY) == pdPASS)
             {
+                char buf[24];
+                snprintf(buf, sizeof(buf), "BTN_%s pressed", btnName(receivedBtnID));
+                LOG_D("BTN", buf);
+
                 uint8_t cmd = 0;
 
                 if (receivedBtnID == BTN_ID_A)
@@ -36,7 +52,7 @@ namespace ButtonManager
                     }
                     else if (UIManager::getState() == UIManager::CLOCK)
                     {
-                        // From clock screen, C button sends Play/Pause media command
+                        LOG_I("BTN", "media: play/pause");
                         BLEManager::sendMediaControl(0xCD);
                     }
                 }
@@ -48,13 +64,11 @@ namespace ButtonManager
                     }
                 }
 
-                // Send to UI Task if a valid command was generated
                 if (cmd != 0)
                 {
                     xQueueSend(xUICommandQueue, &cmd, 0);
                 }
 
-                // Debounce delay
                 vTaskDelay(pdMS_TO_TICKS(100));
             }
         }

@@ -12,6 +12,8 @@
 #include "system/clock_logic.h"
 #include "system/ble_manager.h"
 #include "system/button_manager.h"
+#include "system/logger.h"
+#include "system/step_counter.h"
 #include "ui/display.h"
 #include "apps/UI_Manager.h"
 
@@ -27,42 +29,38 @@ void attachButtonISR();
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+
+  // Logger must be first so all subsequent inits can use it
+  Logger::init();
+
   PowerManager::initWatchdog();
   xDisplayMutex = xSemaphoreCreateMutex();
   if (xDisplayMutex == NULL)
   {
-    Serial.println("Failed to create display mutex");
+    LOG_E("main", "Failed to create display mutex");
     vTaskDelete(NULL);
   }
 
-  // Initialize power manager
   PowerManager::initPowerManagement();
-
-  // Initialize display
+  PowerManager::initBattery();
   DisplayDriver::initDisplay();
-
   BLEManager::init();
-
-  // Initialize clock logic
   ClockLogic::initClock();
-
   InputManager::init();
+  StepCounter::run();
 
   xButtonQueue = xQueueCreate(10, sizeof(uint8_t));
   xUICommandQueue = xQueueCreate(5, sizeof(uint8_t));
 
-  Serial.println("Setup complete.");
+  LOG_I("main", "Setup complete");
   UIManager::setState(UIManager::CLOCK);
   UIManager::run();
-
   ButtonManager::run();
 }
 
 void loop()
 {
   PowerManager::feedWatchdog();
-  Serial.print("Up: ");
-  Serial.println(millis() / 1000); // Print uptime in seconds
   vTaskDelay(pdMS_TO_TICKS(1000));
 }

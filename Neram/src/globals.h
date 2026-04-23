@@ -7,6 +7,7 @@
 extern SemaphoreHandle_t xDisplayMutex;
 extern QueueHandle_t xButtonQueue;
 extern QueueHandle_t xUICommandQueue;
+extern QueueHandle_t xLogQueue;
 
 // Command definitions
 #define UI_CMD_NEXT 1
